@@ -1,0 +1,236 @@
+{
+  "info": {
+    "name": "T36 — Auth 3 Rôles Tests",
+    "description": "Collection Postman — 10 cas de test pour l'authentification et le contrôle d'accès par rôle",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8080" },
+    { "key": "token_admin", "value": "" },
+    { "key": "token_encadrant", "value": "" },
+    { "key": "token_etudiant", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1 — Login admin → 200 + role=admin",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const d = pm.response.json();",
+              "pm.test('success=true', () => pm.expect(d.success).to.be.true);",
+              "pm.test('role=admin', () => pm.expect(d.data.user.role).to.eql('admin'));",
+              "pm.collectionVariables.set('token_admin', d.data.access_token);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"email\":\"admin@junia.fr\",\"password\":\"Password123!\"}" },
+        "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api","auth","login"] }
+      }
+    },
+    {
+      "name": "2 — Login encadrant → 200 + role=encadrant",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const d = pm.response.json();",
+              "pm.test('role=encadrant', () => pm.expect(d.data.user.role).to.eql('encadrant'));",
+              "pm.collectionVariables.set('token_encadrant', d.data.access_token);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"email\":\"prof.test@universite.fr\",\"password\":\"Prof1234!\"}" },
+        "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api","auth","login"] }
+      }
+    },
+    {
+      "name": "3 — Login étudiant → 200 + role=etudiant",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const d = pm.response.json();",
+              "pm.test('role=etudiant', () => pm.expect(d.data.user.role).to.eql('etudiant'));",
+              "pm.collectionVariables.set('token_etudiant', d.data.access_token);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"email\":\"test2@etudiant.fr\",\"password\":\"password123\"}" },
+        "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api","auth","login"] }
+      }
+    },
+    {
+      "name": "4 — Admin accède /api/admin/users → 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('success=true', () => pm.expect(pm.response.json().success).to.be.true);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token_admin}}" }],
+        "url": { "raw": "{{base_url}}/api/admin/users", "host": ["{{base_url}}"], "path": ["api","admin","users"] }
+      }
+    },
+    {
+      "name": "5 — Étudiant accède /api/admin/users → 403",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 403', () => pm.response.to.have.status(403));",
+              "pm.test('success=false', () => pm.expect(pm.response.json().success).to.be.false);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token_etudiant}}" }],
+        "url": { "raw": "{{base_url}}/api/admin/users", "host": ["{{base_url}}"], "path": ["api","admin","users"] }
+      }
+    },
+    {
+      "name": "6 — Encadrant accède /api/encadrant/projets → 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('success=true', () => pm.expect(pm.response.json().success).to.be.true);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token_encadrant}}" }],
+        "url": { "raw": "{{base_url}}/api/encadrant/projets", "host": ["{{base_url}}"], "path": ["api","encadrant","projets"] }
+      }
+    },
+    {
+      "name": "7 — Étudiant accède /api/etudiant/projet → 200 ou 404",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200 ou 404', () => {",
+              "  pm.expect([200, 404]).to.include(pm.response.code);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token_etudiant}}" }],
+        "url": { "raw": "{{base_url}}/api/etudiant/projet", "host": ["{{base_url}}"], "path": ["api","etudiant","projet"] }
+      }
+    },
+    {
+      "name": "8 — Sans token → /api/me → 401",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 401', () => pm.response.to.have.status(401));",
+              "pm.test('success=false', () => pm.expect(pm.response.json().success).to.be.false);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{base_url}}/api/me", "host": ["{{base_url}}"], "path": ["api","me"] }
+      }
+    },
+    {
+      "name": "9 — Encadrant crée un projet → 201",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 201', () => pm.response.to.have.status(201));",
+              "pm.test('success=true', () => pm.expect(pm.response.json().success).to.be.true);",
+              "const d = pm.response.json();",
+              "if (d.data && d.data.id) pm.collectionVariables.set('projet_id', d.data.id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token_encadrant}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{\"titre\":\"Projet Test T36\",\"description\":\"Créé par collection Postman T36\"}" },
+        "url": { "raw": "{{base_url}}/api/projets", "host": ["{{base_url}}"], "path": ["api","projets"] }
+      }
+    },
+    {
+      "name": "10 — Étudiant tente créer un projet → 403",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 403', () => pm.response.to.have.status(403));",
+              "pm.test('success=false', () => pm.expect(pm.response.json().success).to.be.false);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token_etudiant}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{\"titre\":\"Projet interdit\",\"description\":\"Ne doit pas être créé\"}" },
+        "url": { "raw": "{{base_url}}/api/projets", "host": ["{{base_url}}"], "path": ["api","projets"] }
+      }
+    }
+  ]
+}

@@ -1,0 +1,327 @@
+{
+  "info": {
+    "name": "T100 — Auth 3 Rôles Complet",
+    "description": "Collection Postman complète — 15 cas couvrant toutes les règles d'accès par rôle",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8080" },
+    { "key": "token_admin", "value": "" },
+    { "key": "token_encadrant", "value": "" },
+    { "key": "token_etudiant", "value": "" },
+    { "key": "projet_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "01 — Routes publiques — GET /api/health → 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('status=ok', () => pm.expect(pm.response.json().data.status).to.eql('ok'));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{base_url}}/api/health", "host": ["{{base_url}}"], "path": ["api","health"] }
+      }
+    },
+    {
+      "name": "02 — Register → 410 Gone (désactivé)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 410', () => pm.response.to.have.status(410));",
+              "pm.test('success=false', () => pm.expect(pm.response.json().success).to.be.false);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"email\":\"x@test.fr\",\"password\":\"Test1234!\",\"nom\":\"Test\"}" },
+        "url": { "raw": "{{base_url}}/api/auth/register", "host": ["{{base_url}}"], "path": ["api","auth","register"] }
+      }
+    },
+    {
+      "name": "03 — Login admin → 200 + role=admin",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const d = pm.response.json();",
+              "pm.test('role=admin', () => pm.expect(d.data.user.role).to.eql('admin'));",
+              "pm.collectionVariables.set('token_admin', d.data.access_token);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"email\":\"admin@junia.fr\",\"password\":\"Password123!\"}" },
+        "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api","auth","login"] }
+      }
+    },
+    {
+      "name": "04 — Login encadrant → 200 + role=encadrant",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const d = pm.response.json();",
+              "pm.test('role=encadrant', () => pm.expect(d.data.user.role).to.eql('encadrant'));",
+              "pm.collectionVariables.set('token_encadrant', d.data.access_token);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"email\":\"prof.test@universite.fr\",\"password\":\"Prof1234!\"}" },
+        "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api","auth","login"] }
+      }
+    },
+    {
+      "name": "05 — Login étudiant → 200 + role=etudiant",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const d = pm.response.json();",
+              "pm.test('role=etudiant', () => pm.expect(d.data.user.role).to.eql('etudiant'));",
+              "pm.collectionVariables.set('token_etudiant', d.data.access_token);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"email\":\"test2@etudiant.fr\",\"password\":\"password123\"}" },
+        "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api","auth","login"] }
+      }
+    },
+    {
+      "name": "06 — Routes admin — Admin → /api/admin/users → 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('tableau users', () => pm.expect(pm.response.json().data).to.be.an('array'));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token_admin}}" }],
+        "url": { "raw": "{{base_url}}/api/admin/users", "host": ["{{base_url}}"], "path": ["api","admin","users"] }
+      }
+    },
+    {
+      "name": "07 — Routes admin — Encadrant → /api/admin/users → 403",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 403', () => pm.response.to.have.status(403));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token_encadrant}}" }],
+        "url": { "raw": "{{base_url}}/api/admin/users", "host": ["{{base_url}}"], "path": ["api","admin","users"] }
+      }
+    },
+    {
+      "name": "08 — Routes admin — Étudiant → /api/admin/users → 403",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 403', () => pm.response.to.have.status(403));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token_etudiant}}" }],
+        "url": { "raw": "{{base_url}}/api/admin/users", "host": ["{{base_url}}"], "path": ["api","admin","users"] }
+      }
+    },
+    {
+      "name": "09 — Routes encadrant — Encadrant → /api/encadrant/projets → 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('tableau', () => pm.expect(pm.response.json().data).to.be.an('array'));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token_encadrant}}" }],
+        "url": { "raw": "{{base_url}}/api/encadrant/projets", "host": ["{{base_url}}"], "path": ["api","encadrant","projets"] }
+      }
+    },
+    {
+      "name": "10 — Routes encadrant — Étudiant → /api/encadrant/projets → 403",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 403', () => pm.response.to.have.status(403));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token_etudiant}}" }],
+        "url": { "raw": "{{base_url}}/api/encadrant/projets", "host": ["{{base_url}}"], "path": ["api","encadrant","projets"] }
+      }
+    },
+    {
+      "name": "11 — Routes étudiant — Étudiant → /api/etudiant/projet → 200 ou 404",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200 ou 404', () => pm.expect([200,404]).to.include(pm.response.code));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token_etudiant}}" }],
+        "url": { "raw": "{{base_url}}/api/etudiant/projet", "host": ["{{base_url}}"], "path": ["api","etudiant","projet"] }
+      }
+    },
+    {
+      "name": "12 — Routes étudiant — Encadrant → /api/etudiant/projet → 403",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 403', () => pm.response.to.have.status(403));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token_encadrant}}" }],
+        "url": { "raw": "{{base_url}}/api/etudiant/projet", "host": ["{{base_url}}"], "path": ["api","etudiant","projet"] }
+      }
+    },
+    {
+      "name": "13 — Token absent → /api/me → 401",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 401', () => pm.response.to.have.status(401));",
+              "pm.test('success=false', () => pm.expect(pm.response.json().success).to.be.false);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{base_url}}/api/me", "host": ["{{base_url}}"], "path": ["api","me"] }
+      }
+    },
+    {
+      "name": "14 — Token invalide/expiré → /api/me → 401",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 401', () => pm.response.to.have.status(401));",
+              "pm.test('message expiration', () => {",
+              "  const msg = pm.response.json().error || '';",
+              "  pm.expect(msg.toLowerCase()).to.include('expir');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0IiwiZXhwIjoxfQ.invalidsig" }],
+        "url": { "raw": "{{base_url}}/api/me", "host": ["{{base_url}}"], "path": ["api","me"] }
+      }
+    },
+    {
+      "name": "15 — Admin crée projet, étudiant est bloqué (enchaînement)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Étudiant bloqué sur création projet → 403', () => pm.response.to.have.status(403));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token_etudiant}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{\"titre\":\"Tentative illicite\",\"description\":\"Un étudiant ne peut pas créer de projet\"}" },
+        "url": { "raw": "{{base_url}}/api/projets", "host": ["{{base_url}}"], "path": ["api","projets"] }
+      }
+    }
+  ]
+}

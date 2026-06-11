@@ -1,0 +1,18 @@
+✅ Clé service_role chargée
+
+ ┌───────────────────────────────────────────────────┐ 
+ │         Suivi Projets Étudiants API v1.0          │ 
+ │                   Fiber v2.52.5                   │ 
+ │               http://127.0.0.1:8080               │ 
+ │       (bound on host 0.0.0.0 and port 8080)       │ 
+ │                                                   │ 
+ │ Handlers ............ 91  Processes ........... 1 │ 
+ │ Prefork ....... Disabled  PID ............. 18552 │ 
+ └───────────────────────────────────────────────────┘ 
+
+[13:12:36] GET /api/health → 200 (           0s)
+[13:13:15] POST /api/auth/login → 200 (   1.8349727s)
+[13:13:17] GET /api/admin/institutions → 200 (   263.3293ms)
+[13:13:18] GET /api/admin/programs → 200 (   169.2787ms)
+[13:13:18] GET /api/admin/cohorts → 200 (   407.5626ms)
+[13:13:19] GET /api/admin/groups → 200 (   281.0269ms)

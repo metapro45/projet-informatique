@@ -1,0 +1,288 @@
+{
+  "info": {
+    "name": "T46 — CRUD Projets & Équipes",
+    "description": "Collection Postman — 10 cas de test pour le CRUD complet projets et équipes",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8080" },
+    { "key": "token_admin", "value": "" },
+    { "key": "token_encadrant", "value": "" },
+    { "key": "projet_id", "value": "" },
+    { "key": "equipe_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Setup — Login admin",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Login OK', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('token_admin', pm.response.json().data.access_token);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"email\":\"admin@junia.fr\",\"password\":\"Password123!\"}" },
+        "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api","auth","login"] }
+      }
+    },
+    {
+      "name": "Setup — Login encadrant",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Login OK', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('token_encadrant', pm.response.json().data.access_token);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"email\":\"prof.test@universite.fr\",\"password\":\"Prof1234!\"}" },
+        "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api","auth","login"] }
+      }
+    },
+    {
+      "name": "1 — GET /api/projets → 200 + tableau",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const d = pm.response.json();",
+              "pm.test('success=true', () => pm.expect(d.success).to.be.true);",
+              "pm.test('data est un tableau', () => pm.expect(d.data).to.be.an('array'));",
+              "if (d.data.length > 0) pm.collectionVariables.set('projet_id', d.data[0].id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token_encadrant}}" }],
+        "url": { "raw": "{{base_url}}/api/projets", "host": ["{{base_url}}"], "path": ["api","projets"] }
+      }
+    },
+    {
+      "name": "2 — POST /api/projets (encadrant) → 201",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 201', () => pm.response.to.have.status(201));",
+              "const d = pm.response.json();",
+              "pm.test('success=true', () => pm.expect(d.success).to.be.true);",
+              "pm.test('id présent', () => pm.expect(d.data.id).to.be.a('string'));",
+              "pm.collectionVariables.set('projet_id', d.data.id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token_encadrant}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"titre\":\"Projet T46 Test\",\"description\":\"Créé par collection Postman T46\",\"statut\":\"actif\"}"
+        },
+        "url": { "raw": "{{base_url}}/api/projets", "host": ["{{base_url}}"], "path": ["api","projets"] }
+      }
+    },
+    {
+      "name": "3 — GET /api/projets/:id → 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const d = pm.response.json();",
+              "pm.test('id correspond', () => pm.expect(d.data.id).to.eql(pm.collectionVariables.get('projet_id')));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token_encadrant}}" }],
+        "url": { "raw": "{{base_url}}/api/projets/{{projet_id}}", "host": ["{{base_url}}"], "path": ["api","projets","{{projet_id}}"] }
+      }
+    },
+    {
+      "name": "4 — PUT /api/projets/:id → 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "const d = pm.response.json();",
+              "pm.test('titre mis à jour', () => pm.expect(d.data.titre).to.eql('Projet T46 Modifié'));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token_encadrant}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"titre\":\"Projet T46 Modifié\",\"description\":\"Mis à jour\",\"statut\":\"actif\"}"
+        },
+        "url": { "raw": "{{base_url}}/api/projets/{{projet_id}}", "host": ["{{base_url}}"], "path": ["api","projets","{{projet_id}}"] }
+      }
+    },
+    {
+      "name": "6 — GET /api/projets/:id/equipes → 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('data est un tableau', () => pm.expect(pm.response.json().data).to.be.an('array'));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token_encadrant}}" }],
+        "url": { "raw": "{{base_url}}/api/projets/{{projet_id}}/equipes", "host": ["{{base_url}}"], "path": ["api","projets","{{projet_id}}","equipes"] }
+      }
+    },
+    {
+      "name": "7 — POST /api/projets/:id/equipes (encadrant) → 201",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 201', () => pm.response.to.have.status(201));",
+              "const d = pm.response.json();",
+              "pm.test('success=true', () => pm.expect(d.success).to.be.true);",
+              "pm.collectionVariables.set('equipe_id', d.data.id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token_encadrant}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{\"nom\":\"Équipe T46 Test\"}" },
+        "url": { "raw": "{{base_url}}/api/projets/{{projet_id}}/equipes", "host": ["{{base_url}}"], "path": ["api","projets","{{projet_id}}","equipes"] }
+      }
+    },
+    {
+      "name": "8 — GET /api/equipes/:id → 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('id correspond', () => pm.expect(pm.response.json().data.id).to.eql(pm.collectionVariables.get('equipe_id')));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token_encadrant}}" }],
+        "url": { "raw": "{{base_url}}/api/equipes/{{equipe_id}}", "host": ["{{base_url}}"], "path": ["api","equipes","{{equipe_id}}"] }
+      }
+    },
+    {
+      "name": "9 — PUT /api/equipes/:id → 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('nom mis à jour', () => pm.expect(pm.response.json().data.nom).to.eql('Équipe T46 Renommée'));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token_encadrant}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{\"nom\":\"Équipe T46 Renommée\"}" },
+        "url": { "raw": "{{base_url}}/api/equipes/{{equipe_id}}", "host": ["{{base_url}}"], "path": ["api","equipes","{{equipe_id}}"] }
+      }
+    },
+    {
+      "name": "10 — DELETE /api/equipes/:id → 204",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 204', () => pm.response.to.have.status(204));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token_encadrant}}" }],
+        "url": { "raw": "{{base_url}}/api/equipes/{{equipe_id}}", "host": ["{{base_url}}"], "path": ["api","equipes","{{equipe_id}}"] }
+      }
+    },
+    {
+      "name": "5 — DELETE /api/projets/:id → 204",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 204', () => pm.response.to.have.status(204));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token_encadrant}}" }],
+        "url": { "raw": "{{base_url}}/api/projets/{{projet_id}}", "host": ["{{base_url}}"], "path": ["api","projets","{{projet_id}}"] }
+      }
+    }
+  ]
+}
